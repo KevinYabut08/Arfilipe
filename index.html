@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DJ ARFILIPE — The Sound Architect</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,600;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #050507;
+    --deep: #0a0a12;
+    --panel: #10101a;
+    --border: #1e1e2e;
+    --neon-cyan: #00f5d4;
+    --neon-magenta: #f700ff;
+    --neon-amber: #ffb700;
+    --white: #f0f0f8;
+    --muted: #6b6b8a;
+    --glass: rgba(255,255,255,0.04);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--neon-cyan);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.08s, width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1px solid var(--neon-cyan);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.18s, width 0.3s, height 0.3s, border-color 0.2s;
+    opacity: 0.6;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 1000; opacity: 0.5;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+    padding: 24px 48px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(to bottom, rgba(5,5,7,0.95) 0%, transparent 100%);
+    backdrop-filter: blur(4px);
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px; letter-spacing: 6px;
+    color: var(--white); text-decoration: none;
+  }
+  .nav-logo span { color: var(--neon-cyan); }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); text-decoration: none; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--neon-cyan); }
+  .nav-cta {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 10px 24px; border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan); text-decoration: none;
+    transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .nav-cta::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--neon-cyan); transform: translateX(-101%); transition: transform 0.25s;
+  }
+  .nav-cta:hover::before { transform: translateX(0); }
+  .nav-cta:hover { color: var(--black); }
+  .nav-cta span { position: relative; z-index: 1; }
+
+  .hero {
+    min-height: 100vh; display: flex; align-items: flex-end;
+    padding: 0 48px 80px; position: relative; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 70% 40%, rgba(0,245,212,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 20% 70%, rgba(247,0,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255,183,0,0.04) 0%, transparent 50%),
+      var(--black);
+  }
+  .waveform {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 200px;
+    display: flex; align-items: flex-end; gap: 3px; padding: 0 20px;
+    opacity: 0.15; pointer-events: none;
+  }
+  .bar {
+    flex: 1;
+    background: linear-gradient(to top, var(--neon-cyan), var(--neon-magenta));
+    border-radius: 2px 2px 0 0;
+    animation: wave var(--dur) ease-in-out infinite alternate;
+  }
+  @keyframes wave { from { height: var(--min); } to { height: var(--max); } }
+
+  .hero-content { position: relative; z-index: 2; max-width: 900px; }
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--neon-cyan); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .hero-eyebrow::before { content: ''; width: 40px; height: 1px; background: var(--neon-cyan); }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 14vw, 200px); line-height: 0.9; letter-spacing: -2px;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, var(--white) 40%, var(--neon-cyan) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: heroReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes heroReveal { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-sub {
+    font-size: 18px; font-weight: 300; color: var(--muted);
+    max-width: 480px; line-height: 1.7; margin-bottom: 48px;
+    animation: heroReveal 1.2s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .hero-actions {
+    display: flex; gap: 20px; align-items: center;
+    animation: heroReveal 1.2s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .btn-primary {
+    font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 18px 40px; background: var(--neon-cyan); color: var(--black);
+    text-decoration: none; font-weight: 700; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .btn-primary::after {
+    content: ''; position: absolute; inset: 0;
+    background: var(--neon-magenta); transform: translateX(101%); transition: transform 0.25s;
+  }
+  .btn-primary:hover::after { transform: translateX(0); }
+  .btn-primary span { position: relative; z-index: 1; }
+  .btn-ghost {
+    font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 10px; transition: color 0.2s;
+  }
+  .btn-ghost:hover { color: var(--white); }
+  .btn-ghost .play-icon {
+    width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-ghost:hover .play-icon { border-color: var(--neon-magenta); background: rgba(247,0,255,0.1); color: var(--neon-magenta); }
+
+  .scroll-badge {
+    position: absolute; right: 48px; bottom: 80px; writing-mode: vertical-rl;
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 4px;
+    color: var(--muted); display: flex; align-items: center; gap: 16px; z-index: 2;
+    animation: fadeIn 2s 1s both;
+  }
+  .scroll-badge::after {
+    content: ''; width: 1px; height: 60px;
+    background: linear-gradient(to bottom, var(--muted), transparent);
+    animation: scrollLine 2s 1.5s ease-out infinite;
+  }
+  @keyframes scrollLine {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .stats {
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 40px 48px; display: grid; grid-template-columns: repeat(4, 1fr);
+  }
+  .stat { padding: 0 40px; border-right: 1px solid var(--border); }
+  .stat:first-child { padding-left: 0; }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 56px; line-height: 1; margin-bottom: 6px; }
+  .stat-num span { color: var(--neon-cyan); }
+  .stat-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  .about { padding: 120px 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .section-tag {
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--neon-magenta); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .section-tag::before { content: ''; width: 24px; height: 1px; background: var(--neon-magenta); }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 6vw, 80px); line-height: 1; letter-spacing: 1px; margin-bottom: 24px; }
+  .section-body { color: var(--muted); line-height: 1.8; font-size: 16px; margin-bottom: 32px; }
+  .dj-visual { position: relative; aspect-ratio: 4/5; background: var(--panel); overflow: hidden; }
+  .dj-visual::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 30%, rgba(0,245,212,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 80% at 80% 80%, rgba(247,0,255,0.1) 0%, transparent 70%);
+  }
+  .vinyl {
+    position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; bottom: -10%; right: -10%;
+    background:
+      radial-gradient(circle at 50% 50%, var(--panel) 15%, transparent 15%),
+      repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 8px, rgba(0,245,212,0.05) 8px, rgba(0,245,212,0.05) 9px);
+    border: 1px solid var(--border); animation: spin 20s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .vinyl-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 15%; aspect-ratio: 1; border-radius: 50%;
+    background: var(--neon-cyan); box-shadow: 0 0 30px rgba(0,245,212,0.5);
+  }
+  .about-quote { border-left: 2px solid var(--neon-cyan); padding-left: 24px; margin: 32px 0; font-style: italic; color: var(--white); font-size: 18px; line-height: 1.6; }
+
+  .services { padding: 0 48px 120px; }
+  .services-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 64px; }
+  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--border); }
+  .service-card { background: var(--black); padding: 48px 40px; position: relative; overflow: hidden; transition: background 0.3s; }
+  .service-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent, var(--neon-cyan)); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .service-card:hover::before { transform: scaleX(1); }
+  .service-card:hover { background: var(--panel); }
+  .service-card:nth-child(2) { --accent: var(--neon-magenta); }
+  .service-card:nth-child(3) { --accent: var(--neon-amber); }
+  .service-card:nth-child(4) { --accent: var(--neon-magenta); }
+  .service-card:nth-child(5) { --accent: var(--neon-amber); }
+  .service-card:nth-child(6) { --accent: var(--neon-cyan); }
+  .service-number { font-family: 'Bebas Neue', sans-serif; font-size: 64px; color: var(--border); margin-bottom: 16px; transition: color 0.3s; }
+  .service-card:hover .service-number { color: var(--accent, var(--neon-cyan)); }
+  .service-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; margin-bottom: 16px; }
+  .service-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+  .marquee-wrap { overflow: hidden; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 20px 0; background: var(--panel); }
+  .marquee-track { display: flex; gap: 60px; animation: marquee 25s linear infinite; width: max-content; }
+  .marquee-item { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 6px; white-space: nowrap; color: var(--muted); display: flex; align-items: center; gap: 60px; }
+  .marquee-item::after { content: '◆'; color: var(--neon-cyan); font-size: 16px; }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  .mixes { padding: 120px 48px; }
+  .mixes-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 64px; }
+  .mix-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2px; background: var(--border); }
+  .mix-card {
+    background: var(--panel); padding: 40px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 220px; position: relative; overflow: hidden; transition: background 0.3s;
+  }
+  .mix-card:hover { background: #161626; }
+  .mix-card.featured {
+    grid-row: span 2; min-height: 460px;
+    background: linear-gradient(160deg, rgba(0,245,212,0.08) 0%, transparent 60%), var(--panel);
+  }
+  .mix-genre { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--neon-cyan); margin-bottom: 12px; }
+  .mix-card:nth-child(2) .mix-genre { color: var(--neon-magenta); }
+  .mix-card:nth-child(3) .mix-genre { color: var(--neon-amber); }
+  .mix-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; margin-bottom: 8px; }
+  .mix-card.featured .mix-title { font-size: 52px; }
+  .mix-meta { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
+  .mix-waveform { height: 40px; display: flex; align-items: center; gap: 2px; margin: 20px 0; }
+  .mw-bar { flex: 1; background: rgba(0,245,212,0.3); border-radius: 1px; animation: mwave var(--d) ease-in-out infinite alternate; }
+  @keyframes mwave { from { height: var(--h1); } to { height: var(--h2); } }
+  .mix-play { display: inline-flex; align-items: center; gap: 12px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--neon-cyan); text-decoration: none; transition: gap 0.2s; }
+  .mix-play:hover { gap: 20px; }
+  .mix-play .arrow { font-size: 18px; }
+
+  .testimonials { padding: 0 48px 120px; }
+  .testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
+  .testi-card { background: var(--glass); border: 1px solid var(--border); padding: 40px; position: relative; }
+  .testi-card::before { content: '"'; font-family: 'Bebas Neue', sans-serif; font-size: 120px; color: var(--neon-cyan); opacity: 0.1; position: absolute; top: -20px; left: 24px; line-height: 1; pointer-events: none; }
+  .testi-text { font-size: 15px; color: var(--muted); line-height: 1.8; margin-bottom: 32px; position: relative; }
+  .testi-author { display: flex; align-items: center; gap: 16px; }
+  .testi-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta)); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--black); flex-shrink: 0; }
+  .testi-name { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 1px; color: var(--white); margin-bottom: 4px; }
+  .testi-role { font-size: 12px; color: var(--muted); }
+
+  .contact { padding: 120px 48px; background: var(--panel); position: relative; overflow: hidden; }
+  .contact::before { content: ''; position: absolute; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(0,245,212,0.05) 0%, transparent 70%); pointer-events: none; }
+  .contact-inner { max-width: 700px; position: relative; z-index: 1; }
+  .phone-inquiry { margin-top: 48px; display: flex; flex-direction: column; gap: 24px; }
+  .phone-number {
+    display: inline-flex; align-items: center; gap: 20px;
+    font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 7vw, 80px);
+    letter-spacing: 4px; color: var(--neon-cyan); text-decoration: none; line-height: 1;
+    transition: color 0.25s, letter-spacing 0.25s;
+  }
+  .phone-number:hover { color: var(--neon-magenta); letter-spacing: 8px; }
+  .phone-icon { font-size: 40px; }
+  .phone-note { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  footer { border-top: 1px solid var(--border); padding: 48px; display: flex; justify-content: space-between; align-items: center; }
+  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 8px; color: var(--white); }
+  .footer-logo span { color: var(--neon-cyan); }
+  .footer-links { display: flex; gap: 32px; }
+  .footer-links a { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--neon-cyan); }
+  .footer-copy { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav>
+  <a href="#" class="nav-logo">DJ <span>ARFILIPE</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#mixes">Mixes</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta"><span>Book Now</span></a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="waveform" id="waveform"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Sound Architect · Est. 2012</div>
+    <h1 class="hero-title">SET THE<br>NIGHT ON<br>FIRE</h1>
+    <p class="hero-sub">Crafting unforgettable sonic experiences for weddings, corporate events, festivals, and private parties across the city.</p>
+    <div class="hero-actions">
+      <a href="#contact" class="btn-primary"><span>Book Your Event</span></a>
+      <a href="#mixes" class="btn-ghost">
+        <div class="play-icon">▶</div>
+        Hear My Mixes
+      </a>
+    </div>
+  </div>
+  <div class="scroll-badge">Scroll</div>
+</section>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num">500<span>+</span></div><div class="stat-label">Events Performed</div></div>
+  <div class="stat"><div class="stat-num">12<span>+</span></div><div class="stat-label">Years Experience</div></div>
+  <div class="stat"><div class="stat-num">98<span>%</span></div><div class="stat-label">Client Satisfaction</div></div>
+  <div class="stat"><div class="stat-num">30<span>+</span></div><div class="stat-label">Cities Performed</div></div>
+</div>
+
+<section class="about" id="about">
+  <div>
+    <div class="section-tag">About</div>
+    <h2 class="section-title">More Than Just Music</h2>
+    <p class="section-body">I don't just play tracks — I read the room, build the arc, and turn a crowd into a community. From the first beat drop to the last song, every set is a carefully crafted journey tailored to your event.</p>
+    <blockquote class="about-quote">"Music is the architecture of time. I design spaces people never want to leave."</blockquote>
+    <p class="section-body">Specializing in House, Tech House, Hip-Hop, and Pop crossovers, with a library of 40,000+ tracks and the technical gear to match any venue — from intimate lounges to open-air festivals.</p>
+  </div>
+  <div class="dj-visual">
+    <div class="vinyl"><div class="vinyl-center"></div></div>
+  </div>
+</section>
+
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item">Weddings</span>
+    <span class="marquee-item">Corporate Events</span>
+    <span class="marquee-item">Nightclubs</span>
+    <span class="marquee-item">Festivals</span>
+    <span class="marquee-item">Private Parties</span>
+    <span class="marquee-item">Rooftop Events</span>
+    <span class="marquee-item">Brand Activations</span>
+    <span class="marquee-item">Weddings</span>
+    <span class="marquee-item">Corporate Events</span>
+    <span class="marquee-item">Nightclubs</span>
+    <span class="marquee-item">Festivals</span>
+    <span class="marquee-item">Private Parties</span>
+    <span class="marquee-item">Rooftop Events</span>
+    <span class="marquee-item">Brand Activations</span>
+  </div>
+</div>
+
+<section class="services" id="services">
+  <div class="services-header">
+    <div>
+      <div class="section-tag">Services</div>
+      <h2 class="section-title">What I Bring<br>to Every Event</h2>
+    </div>
+  </div>
+  <div class="services-grid">
+    <div class="service-card"><div class="service-number">01</div><div class="service-title">Wedding DJ</div><p class="service-desc">From the ceremony to the last dance — curated playlists, seamless transitions, and MC services to make your day perfect.</p></div>
+    <div class="service-card"><div class="service-number">02</div><div class="service-title">Corporate Events</div><p class="service-desc">Professional atmosphere, branded playlists, and flexible setups for conferences, product launches, and team celebrations.</p></div>
+    <div class="service-card"><div class="service-number">03</div><div class="service-title">Festival & Club Sets</div><p class="service-desc">High-energy performances built to move crowds. Tech rider flexible, CDJs or vinyl — I come prepared for any stage.</p></div>
+    <div class="service-card"><div class="service-number">04</div><div class="service-title">Private Parties</div><p class="service-desc">Birthday bashes, anniversaries, or just because — intimate or large, I bring the energy that fits your vibe.</p></div>
+    <div class="service-card"><div class="service-number">05</div><div class="service-title">Equipment Rental</div><p class="service-desc">Full PA system, lighting rig, and subwoofers available. Professional-grade gear delivered, set up, and operated.</p></div>
+    <div class="service-card"><div class="service-number">06</div><div class="service-title">Custom Mix Production</div><p class="service-desc">Promotional mixes, podcast episodes, or custom soundtracks for your brand — studio-quality delivery.</p></div>
+  </div>
+</section>
+
+<section class="mixes" id="mixes">
+  <div class="mixes-header">
+    <div>
+      <div class="section-tag">Latest Mixes</div>
+      <h2 class="section-title">Hear the<br>Difference</h2>
+    </div>
+    <a href="#" class="mix-play">View all mixes <span class="arrow">→</span></a>
+  </div>
+  <div class="mix-grid">
+    <div class="mix-card featured">
+      <div><div class="mix-genre">Tech House · 2024</div><div class="mix-title">Midnight Voltage Vol. 3</div></div>
+      <div class="mix-waveform" id="mwFeatured"></div>
+      <div><div class="mix-meta">1:22:40 · 12.4K Plays</div><br><a href="#" class="mix-play">Play Now <span class="arrow">→</span></a></div>
+    </div>
+    <div class="mix-card">
+      <div><div class="mix-genre">Hip-Hop · R&B</div><div class="mix-title">Golden Hour Vibes</div></div>
+      <div class="mix-meta">58:12 · 8.7K Plays</div>
+    </div>
+    <div class="mix-card">
+      <div><div class="mix-genre">Wedding · Crossover</div><div class="mix-title">Celebration Mix 2024</div></div>
+      <div class="mix-meta">1:04:30 · 6.2K Plays</div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonials">
+  <div class="section-tag">Testimonials</div>
+  <h2 class="section-title">What Clients Say</h2>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <p class="testi-text">Arfilipe completely transformed our wedding reception. Every song felt perfectly timed — guests were on the dance floor from the first song to the very last. Absolutely magical.</p>
+      <div class="testi-author"><div class="testi-avatar">SK</div><div><div class="testi-name">Sarah & Kevin M.</div><div class="testi-role">Wedding</div></div></div>
+    </div>
+    <div class="testi-card">
+      <p class="testi-text">We hired Arfilipe for our product launch event — 400 guests, very specific brand vibe. He nailed it. The energy was perfect and he was completely professional throughout.</p>
+      <div class="testi-author"><div class="testi-avatar">RL</div><div><div class="testi-name">Rachel L.</div><div class="testi-role">Corporate Event</div></div></div>
+    </div>
+    <div class="testi-card">
+      <p class="testi-text">I've worked with a lot of DJs for our club nights — Arfilipe is genuinely one of the best in the city. Reads the crowd like nobody else, and his transitions are flawless.</p>
+      <div class="testi-author"><div class="testi-avatar">DT</div><div><div class="testi-name">Daniel T.</div><div class="testi-role">Club Nigh</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="contact-inner">
+    <div class="section-tag">Contact</div>
+    <h2 class="section-title">Let's Make<br>Something Epic</h2>
+    <div class="phone-inquiry">
+      <p class="section-body" style="margin-bottom:0;">Ready to make your event unforgettable? Call or text directly to check availability and get a quote.</p>
+      <a href="tel:1234567890" class="phone-number">
+        <span class="phone-icon">📞</span>
+        (587) 433-8094
+      </a>
+      <p class="phone-note">Available 24/7</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">DJ <span>ARFILIPE</span></div>
+  <div class="footer-links">
+    <a href="https://www.facebook.com/felipe.naz.140?mibextid=wwXIfr&rdid=Tyz8oDODPUNzT0Ws&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18CRhmBE3Z#">Facebook</a>
+  </div>
+  <div class="footer-copy">© 2026 DJ ARFILIPE. All rights reserved.</div>
+  <div class="footer-copy">Developed by SHIFT</div>
+</footer>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '20px'; cursor.style.height = '20px';
+      cursor.style.background = 'var(--neon-magenta)';
+      ring.style.width = '60px'; ring.style.height = '60px';
+      ring.style.borderColor = 'var(--neon-magenta)';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '12px'; cursor.style.height = '12px';
+      cursor.style.background = 'var(--neon-cyan)';
+      ring.style.width = '36px'; ring.style.height = '36px';
+      ring.style.borderColor = 'var(--neon-cyan)';
+    });
+  });
+
+  const waveform = document.getElementById('waveform');
+  for (let i = 0; i < 120; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const min = Math.random() * 20 + 4;
+    const max = Math.random() * 140 + 20;
+    const dur = (Math.random() * 1.5 + 0.4).toFixed(2) + 's';
+    bar.style.cssText = `--min:${min}px; --max:${max}px; --dur:${dur}; animation-delay:${(Math.random()*1.5).toFixed(2)}s`;
+    waveform.appendChild(bar);
+  }
+
+  const mwFeatured = document.getElementById('mwFeatured');
+  for (let i = 0; i < 60; i++) {
+    const b = document.createElement('div');
+    b.className = 'mw-bar';
+    const h1 = Math.random() * 10 + 4;
+    const h2 = Math.random() * 32 + 8;
+    b.style.cssText = `--h1:${h1}px; --h2:${h2}px; --d:${(Math.random()*1.2+0.3).toFixed(2)}s; animation-delay:${(Math.random()*1).toFixed(2)}s`;
+    mwFeatured.appendChild(b);
+  }
+</script>
+</body>
+</html>
